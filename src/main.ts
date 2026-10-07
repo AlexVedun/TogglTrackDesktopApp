@@ -3,6 +3,7 @@ import * as path from 'node:path';
 
 const TIMER_URL = 'https://track.toggl.com/timer';
 const PARTITION = 'persist:toggl-track';
+const APP_NAME = 'Toggl Track Desktop';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -46,12 +47,13 @@ function createMenu() {
 }
 
 function createWindow() {
+  const windowTitle = `${APP_NAME} - ${app.getVersion()}`;
   const iconPath = app.isPackaged
     ? path.join(process.resourcesPath, 'icon.png')
     : path.join(__dirname, '..', 'build', 'icons', '512x512.png');
 
   mainWindow = new BrowserWindow({
-    title: 'Toggl Track',
+    title: windowTitle,
     icon: iconPath,
     width: 1100,
     height: 780,
@@ -68,6 +70,8 @@ function createWindow() {
   });
 
   const contents = mainWindow.webContents;
+
+  mainWindow.on('page-title-updated', event => event.preventDefault());
 
   function handleNavigation(event: Electron.Event, url: string): void {
     if (!isTogglUrl(url)) {
