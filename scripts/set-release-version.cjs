@@ -4,9 +4,9 @@ const path = require('node:path');
 if (process.env.GITHUB_REF_TYPE !== 'tag') process.exit(0);
 
 const tag = process.env.GITHUB_REF_NAME || '';
-const match = /^v((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))$/.exec(tag);
+const match = /^((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))$/.exec(tag);
 if (!match) {
-  console.error(`Expected a version tag such as v1.2.3, got: ${tag}`);
+  console.error(`Expected a version tag such as 1.2.3, got: ${tag}`);
   process.exit(1);
 }
 
