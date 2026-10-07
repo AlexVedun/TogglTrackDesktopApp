@@ -1,0 +1,43 @@
+{
+  "name": "toggl-track-desktop-wrapper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A small desktop window for Toggl Track",
+  "desktopName": "dev.toggltrack.wrapper",
+  "main": "out/main.js",
+  "scripts": {
+    "compile": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "start": "npm run compile && electron .",
+    "build:linux": "npm run compile && electron-builder --linux AppImage --x64",
+    "build:win": "npm run compile && electron-builder --win nsis --x64",
+    "build:mac": "npm run compile && electron-builder --mac dmg --arm64",
+    "build:dir": "npm run compile && electron-builder --dir"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3",
+    "typescript": "7.0.2"
+  },
+  "build": {
+    "appId": "dev.toggltrack.wrapper",
+    "productName": "Toggl Track Desktop",
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "category": "Office",
+      "icon": "build/icons",
+      "syncDesktopName": true,
+      "target": ["AppImage"]
+    },
+    "mac": {
+      "identity": null
+    }
+  }
+}

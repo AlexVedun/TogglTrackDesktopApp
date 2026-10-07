@@ -1,0 +1,63 @@
+name: Build desktop apps
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:linux
+      - uses: actions/upload-artifact@v6
+        with:
+          name: toggl-track-linux-x64
+          path: dist/*.AppImage
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:win
+      - uses: actions/upload-artifact@v6
+        with:
+          name: toggl-track-windows-x64
+          path: dist/*.exe
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-15
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:mac
+      - uses: actions/upload-artifact@v6
+        with:
+          name: toggl-track-macos-arm64
+          path: dist/*.dmg
+          if-no-files-found: error
