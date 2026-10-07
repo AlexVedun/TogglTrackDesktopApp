@@ -25,6 +25,16 @@ npm start
 
 Для збирання каталогу програми без інсталятора виконайте `npm run build:dir`.
 
+### Піктограма AppImage в меню та доку Linux
+
+AppImage містить піктограму, але під час простого запуску не реєструється в меню робочого столу. Щоб док у Wayland знаходив піктограму та програму можна було запускати з меню, виконайте один раз після збирання:
+
+```sh
+npm run integrate:linux -- "dist/Toggl Track Desktop-0.1.0.AppImage"
+```
+
+Команда створює запис `.desktop` і встановлює піктограми лише для поточного користувача. Якщо перенесете AppImage в іншу папку, повторіть команду з новим шляхом. Для AppImage, завантаженого окремо від вихідного коду, можна скористатися AppImageLauncher для інтеграції з робочим столом.
+
 ## Збирання в GitHub Actions
 
 Workflow [`.github/workflows/build.yml`](.github/workflows/build.yml) запускається після push, для pull request і вручну через **Actions → Build desktop apps → Run workflow**. Він збирає AppImage на Linux, інсталятор на Windows та DMG на macOS з Apple Silicon. Готові файли доступні як артефакти відповідного запуску на вкладці **Actions**.

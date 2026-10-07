@@ -1,4 +1,5 @@
 import { app, BrowserWindow, Menu, shell, session, type MenuItemConstructorOptions } from 'electron';
+import * as path from 'node:path';
 
 const TIMER_URL = 'https://track.toggl.com/timer';
 const PARTITION = 'persist:toggl-track';
@@ -45,8 +46,13 @@ function createMenu() {
 }
 
 function createWindow() {
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'icon.png')
+    : path.join(__dirname, '..', 'build', 'icons', '512x512.png');
+
   mainWindow = new BrowserWindow({
     title: 'Toggl Track',
+    icon: iconPath,
     width: 1100,
     height: 780,
     minWidth: 560,

@@ -12,7 +12,8 @@
     "build:linux": "npm run compile && electron-builder --linux AppImage --x64",
     "build:win": "npm run compile && electron-builder --win nsis --x64",
     "build:mac": "npm run compile && electron-builder --mac dmg --arm64",
-    "build:dir": "npm run compile && electron-builder --dir"
+    "build:dir": "npm run compile && electron-builder --dir",
+    "integrate:linux": "node scripts/integrate-linux-appimage.cjs"
   },
   "devDependencies": {
     "@types/node": "24.19.1",
@@ -26,6 +27,9 @@
     "files": [
       "out/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      { "from": "build/icons/512x512.png", "to": "icon.png" }
     ],
     "directories": {
       "output": "dist"
