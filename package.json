@@ -8,6 +8,7 @@
   "scripts": {
     "compile": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
+    "audit:fix": "npm audit fix",
     "start": "npm run compile && electron .",
     "build:linux": "npm run compile && electron-builder --linux AppImage --x64",
     "build:win": "npm run compile && electron-builder --win nsis --x64",
