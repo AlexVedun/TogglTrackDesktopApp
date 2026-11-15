@@ -71,7 +71,13 @@ function fetchJson<T>(url: string, redirectsLeft = 5): Promise<T> {
 
         const chunks: Buffer[] = [];
         res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('error', reject);
+        res.on('aborted', () => reject(new Error(`Response aborted when fetching ${url}`)));
         res.on('end', () => {
+          if (!res.complete) {
+            reject(new Error(`Incomplete response when fetching ${url}`));
+            return;
+          }
           try {
             const text = Buffer.concat(chunks).toString('utf8');
             resolve(JSON.parse(text) as T);
@@ -122,8 +128,18 @@ function downloadFileWithProgress(
 
         const totalBytes = Number(res.headers['content-length'] ?? 0);
         let receivedBytes = 0;
+        let settled = false;
 
         const fileStream = fs.createWriteStream(destinationPath);
+
+        const fail = (err: Error) => {
+          if (settled) return;
+          settled = true;
+          res.destroy();
+          fileStream.destroy();
+          fs.unlink(destinationPath, () => reject(err));
+        };
+
         res.on('data', (chunk: Buffer) => {
           receivedBytes += chunk.length;
           if (totalBytes > 0 && onProgress) {
@@ -131,19 +147,31 @@ function downloadFileWithProgress(
           }
         });
 
+        res.on('error', fail);
+        res.on('aborted', () => {
+          fail(new Error(`Response aborted while downloading ${url}`));
+        });
+
         res.pipe(fileStream);
 
         fileStream.on('finish', () => {
+          if (settled) return;
+          if (!res.complete) {
+            fail(new Error(`Incomplete response while downloading ${url}`));
+            return;
+          }
           fileStream.close(err => {
-            if (err) reject(err);
-            else resolve();
+            if (settled) return;
+            if (err) {
+              fail(err);
+            } else {
+              settled = true;
+              resolve();
+            }
           });
         });
 
-        fileStream.on('error', err => {
-          res.destroy();
-          fs.unlink(destinationPath, () => reject(err));
-        });
+        fileStream.on('error', fail);
       }
     );
 
