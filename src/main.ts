@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, shell, session, type MenuItemConstructorOptions } from 'electron';
 import * as path from 'node:path';
+import { checkForUpdatesOnStartup } from './updater';
 
 const TIMER_URL = 'https://track.toggl.com/timer';
 const PARTITION = 'persist:toggl-track';
@@ -116,6 +117,7 @@ app.whenReady().then(() => {
 
   createMenu();
   createWindow();
+  checkForUpdatesOnStartup(() => mainWindow);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

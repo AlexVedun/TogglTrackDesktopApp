@@ -23,7 +23,9 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: toggl-track-linux-x64
-          path: dist/*.AppImage
+          path: |
+            dist/*.AppImage
+            dist/latest-linux.yml
           if-no-files-found: error
 
   windows:
@@ -41,7 +43,10 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: toggl-track-windows-x64
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/*.exe.blockmap
+            dist/latest.yml
           if-no-files-found: error
 
   macos:

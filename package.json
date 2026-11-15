@@ -25,12 +25,20 @@
   "build": {
     "appId": "dev.toggltrack.wrapper",
     "productName": "Toggl Track Desktop",
+    "publish": {
+      "provider": "github",
+      "owner": "AlexVedun",
+      "repo": "TogglTrackDesktopApp"
+    },
     "files": [
       "out/**/*",
       "package.json"
     ],
     "extraResources": [
-      { "from": "build/icons/512x512.png", "to": "icon.png" }
+      {
+        "from": "build/icons/512x512.png",
+        "to": "icon.png"
+      }
     ],
     "directories": {
       "output": "dist"
@@ -39,10 +47,15 @@
       "category": "Office",
       "icon": "build/icons",
       "syncDesktopName": true,
-      "target": ["AppImage"]
+      "target": [
+        "AppImage"
+      ]
     },
     "mac": {
       "identity": null
     }
+  },
+  "dependencies": {
+    "electron-updater": "6.8.11"
   }
 }
