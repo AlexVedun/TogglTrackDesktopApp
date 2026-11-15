@@ -57,6 +57,7 @@ function fetchJson<T>(url: string, redirectsLeft = 5): Promise<T> {
       res => {
         const status = res.statusCode ?? 0;
         if ([301, 302, 303, 307, 308].includes(status) && res.headers.location) {
+          res.on('error', () => {});
           res.resume();
           const nextUrl = new URL(res.headers.location, url).toString();
           resolve(fetchJson<T>(nextUrl, redirectsLeft - 1));
@@ -64,6 +65,7 @@ function fetchJson<T>(url: string, redirectsLeft = 5): Promise<T> {
         }
 
         if (status < 200 || status >= 300) {
+          res.on('error', () => {});
           res.resume();
           reject(new Error(`HTTP ${status} when fetching ${url}`));
           return;
@@ -114,6 +116,7 @@ function downloadFileWithProgress(
       res => {
         const status = res.statusCode ?? 0;
         if ([301, 302, 303, 307, 308].includes(status) && res.headers.location) {
+          res.on('error', () => {});
           res.resume();
           const nextUrl = new URL(res.headers.location, url).toString();
           resolve(downloadFileWithProgress(nextUrl, destinationPath, onProgress, redirectsLeft - 1));
@@ -121,6 +124,7 @@ function downloadFileWithProgress(
         }
 
         if (status < 200 || status >= 300) {
+          res.on('error', () => {});
           res.resume();
           reject(new Error(`HTTP ${status} while downloading ${url}`));
           return;
@@ -140,16 +144,16 @@ function downloadFileWithProgress(
           fs.unlink(destinationPath, () => reject(err));
         };
 
+        res.on('error', fail);
+        res.on('aborted', () => {
+          fail(new Error(`Response aborted while downloading ${url}`));
+        });
+
         res.on('data', (chunk: Buffer) => {
           receivedBytes += chunk.length;
           if (totalBytes > 0 && onProgress) {
             onProgress(Math.min(1, receivedBytes / totalBytes));
           }
-        });
-
-        res.on('error', fail);
-        res.on('aborted', () => {
-          fail(new Error(`Response aborted while downloading ${url}`));
         });
 
         res.pipe(fileStream);

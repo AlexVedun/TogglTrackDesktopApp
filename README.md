@@ -37,7 +37,9 @@ npm run integrate:linux -- "dist/Toggl-Track-Desktop-1.0.1-x86_64.AppImage"
 
 ## Збирання в GitHub Actions
 
-Workflow [`.github/workflows/build.yml`](.github/workflows/build.yml) запускається лише після надсилання тегу версії на GitHub. Push до гілки та pull request не запускають збирання. Workflow збирає AppImage на Linux, інсталятор на Windows та DMG на macOS з Apple Silicon. Готові файли доступні як артефакти відповідного запуску на вкладці **Actions**.
+Workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) запускається для кожного pull request і перевіряє типи, компіляцію TypeScript та тестове збирання програми (`npm run build:dir`).
+
+Релізний workflow [`.github/workflows/build.yml`](.github/workflows/build.yml) запускається лише після надсилання тегу версії на GitHub (звичайний push до гілки та pull request його не запускають). Workflow збирає AppImage на Linux, інсталятор на Windows та DMG на macOS з Apple Silicon. Готові файли доступні як артефакти відповідного запуску на вкладці **Actions**.
 
 Щоб автоматично створити GitHub Release з усіма трьома пакунками, додайте до потрібного коміту тег версії та надішліть його на GitHub:
 
