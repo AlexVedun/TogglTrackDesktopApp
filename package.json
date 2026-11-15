@@ -17,7 +17,7 @@
     "integrate:linux": "node scripts/integrate-linux-appimage.cjs"
   },
   "devDependencies": {
-    "@types/node": "24.19.1",
+    "@types/node": "26.6.6",
     "electron": "44.5.1",
     "electron-builder": "26.15.3",
     "typescript": "7.0.2"
