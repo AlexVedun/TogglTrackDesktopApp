@@ -1,5 +1,6 @@
 import { app, type BrowserWindow, dialog, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
+import { execFile, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as https from 'node:https';
 import * as os from 'node:os';
@@ -292,6 +293,110 @@ function setupElectronAutoUpdater(getWindow: () => BrowserWindow | null): void {
   });
 }
 
+function getMacAppBundlePath(): string | null {
+  // process.execPath is e.g. /Applications/Toggl Track Desktop.app/Contents/MacOS/Toggl Track Desktop
+  const bundlePath = path.resolve(process.execPath, '..', '..', '..');
+  if (!bundlePath.endsWith('.app')) return null;
+  // Do not attempt in-place replacement if running from a mounted volume or AppTranslocation
+  if (bundlePath.startsWith('/Volumes/') || bundlePath.includes('/AppTranslocation/')) {
+    return null;
+  }
+  try {
+    fs.accessSync(path.dirname(bundlePath), fs.constants.W_OK);
+    fs.accessSync(bundlePath, fs.constants.W_OK);
+    return bundlePath;
+  } catch {
+    return null;
+  }
+}
+
+function execFileAsync(command: string, args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    execFile(command, args, error => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+}
+
+async function installMacDmgInPlace(dmgPath: string, targetAppPath: string): Promise<void> {
+  const mountPoint = fs.mkdtempSync(path.join(os.tmpdir(), 'toggl-track-dmg-'));
+  await execFileAsync('/usr/bin/hdiutil', [
+    'attach',
+    dmgPath,
+    '-nobrowse',
+    '-readonly',
+    '-noautoopen',
+    '-mountpoint',
+    mountPoint
+  ]);
+
+  let sourceAppPath: string | null = null;
+  try {
+    const entries = fs.readdirSync(mountPoint);
+    const appEntry = entries.find(entry => entry.endsWith('.app'));
+    if (!appEntry) {
+      throw new Error('No .app bundle found inside the mounted DMG');
+    }
+    sourceAppPath = path.join(mountPoint, appEntry);
+  } catch (error) {
+    await execFileAsync('/usr/bin/hdiutil', ['detach', mountPoint, '-force']).catch(() => {});
+    try {
+      fs.rmdirSync(mountPoint);
+    } catch {
+      // Ignore cleanup error
+    }
+    throw error;
+  }
+
+  const scriptPath = path.join(os.tmpdir(), `toggl-track-update-${process.pid}.sh`);
+  const scriptContent = [
+    '#!/bin/sh',
+    'PID="$1"',
+    'SRC_APP="$2"',
+    'DST_APP="$3"',
+    'MOUNT_POINT="$4"',
+    'DMG_FILE="$5"',
+    'SCRIPT_FILE="$6"',
+    '',
+    'i=0',
+    'while kill -0 "$PID" 2>/dev/null && [ "$i" -lt 100 ]; do',
+    '  sleep 0.2',
+    '  i=$((i + 1))',
+    'done',
+    '',
+    'STAGING_APP="${DST_APP}.updating-$$"',
+    'rm -rf "$STAGING_APP"',
+    'if /usr/bin/ditto "$SRC_APP" "$STAGING_APP"; then',
+    '  /usr/bin/xattr -cr "$STAGING_APP" 2>/dev/null || true',
+    '  rm -rf "$DST_APP" && mv "$STAGING_APP" "$DST_APP"',
+    'else',
+    '  rm -rf "$STAGING_APP"',
+    'fi',
+    '',
+    '/usr/bin/hdiutil detach "$MOUNT_POINT" -force >/dev/null 2>&1 || true',
+    'rmdir "$MOUNT_POINT" 2>/dev/null || true',
+    'rm -f "$DMG_FILE" 2>/dev/null || true',
+    '/usr/bin/open -n "$DST_APP" >/dev/null 2>&1 || true',
+    'rm -f "$SCRIPT_FILE" 2>/dev/null || true',
+    ''
+  ].join('\n');
+
+  fs.writeFileSync(scriptPath, scriptContent, { mode: 0o700 });
+
+  const child = spawn(
+    '/bin/sh',
+    [scriptPath, String(process.pid), sourceAppPath, targetAppPath, mountPoint, dmgPath, scriptPath],
+    {
+      detached: true,
+      stdio: 'ignore'
+    }
+  );
+  child.unref();
+
+  app.quit();
+}
+
 async function checkMacOsUpdates(getWindow: () => BrowserWindow | null): Promise<void> {
   try {
     const release = await fetchJson<GitHubRelease>(LATEST_RELEASE_API_URL);
@@ -306,7 +411,7 @@ async function checkMacOsUpdates(getWindow: () => BrowserWindow | null): Promise
       type: 'info',
       title: 'Update Available',
       message: `A new version (${latestVersion}) is available.`,
-      detail: `Current version: ${app.getVersion()}\nWould you like to download the update?`,
+      detail: `Current version: ${app.getVersion()}\nWould you like to download and install the update?`,
       buttons: ['Download', 'Later'],
       defaultId: 0,
       cancelId: 1
@@ -334,7 +439,32 @@ async function checkMacOsUpdates(getWindow: () => BrowserWindow | null): Promise
       win.setProgressBar(-1);
     }
 
-    const { response: installResponse } = await showMessageBox(getWindow, {
+    const targetAppPath = getMacAppBundlePath();
+    if (targetAppPath) {
+      const { response: installResponse } = await showMessageBox(getWindow, {
+        type: 'info',
+        title: 'Update Ready',
+        message: `Version ${latestVersion} has been downloaded.`,
+        detail: 'Restart the application now to install the update?',
+        buttons: ['Restart and Install', 'Show in Finder'],
+        defaultId: 0,
+        cancelId: 1
+      });
+
+      if (installResponse === 0) {
+        try {
+          await installMacDmgInPlace(destinationPath, targetAppPath);
+          return;
+        } catch (installError) {
+          console.error('Automatic macOS app replacement failed, falling back to manual DMG open:', installError);
+        }
+      } else {
+        shell.showItemInFolder(destinationPath);
+        return;
+      }
+    }
+
+    const { response: fallbackResponse } = await showMessageBox(getWindow, {
       type: 'info',
       title: 'Update Downloaded',
       message: `${safeFileName} has been downloaded.`,
@@ -344,7 +474,7 @@ async function checkMacOsUpdates(getWindow: () => BrowserWindow | null): Promise
       cancelId: 1
     });
 
-    if (installResponse === 0) {
+    if (fallbackResponse === 0) {
       const openError = await shell.openPath(destinationPath);
       if (openError) {
         shell.showItemInFolder(destinationPath);
