@@ -44,7 +44,7 @@
       "output": "dist"
     },
     "linux": {
-      "artifactName": "Toggl-Track-Desktop-${version}-${arch}.${ext}",
+      "artifactName": "Toggl.Track.Desktop-${version}.${ext}",
       "category": "Office",
       "icon": "build/icons",
       "syncDesktopName": true,
@@ -53,10 +53,10 @@
       ]
     },
     "win": {
-      "artifactName": "Toggl-Track-Desktop-Setup-${version}.${ext}"
+      "artifactName": "Toggl.Track.Desktop.Setup.${version}.${ext}"
     },
     "mac": {
-      "artifactName": "Toggl-Track-Desktop-${version}-${arch}.${ext}",
+      "artifactName": "Toggl.Track.Desktop-${version}-${arch}.${ext}",
       "identity": null
     }
   },
