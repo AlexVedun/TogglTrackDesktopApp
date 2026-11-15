@@ -20,7 +20,7 @@ jobs:
       - run: node scripts/set-release-version.cjs
       - run: npm run check
       - run: npm run build:linux -- --publish never
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: toggl-track-linux-x64
           path: |
@@ -40,7 +40,7 @@ jobs:
       - run: node scripts/set-release-version.cjs
       - run: npm run check
       - run: npm run build:win -- --publish never
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: toggl-track-windows-x64
           path: |
@@ -63,7 +63,7 @@ jobs:
       - run: node scripts/set-release-version.cjs
       - run: npm run check
       - run: npm run build:mac -- --publish never
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: toggl-track-macos-arm64
           path: dist/*.dmg
